@@ -1,0 +1,44 @@
+<apex:page controller="PackagesController" action="{!packageSigned}" standardstylesheets="false" showheader="false" sidebar="false">
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+       <meta name="viewport" content="width=device-width, initial-scale=1,  minimum-scale=1, maximum-scale=1"/>
+  <apex:stylesheet value="{!URLFOR($Resource.TDM_Resources, 'styles/styles.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.TDM_Resources, 'js/jquery.js')}"/>
+  <div class="wrapper innerPage">
+    <section class="topBar">
+        <a href="/DemoApp/apex/DocusignStart" class="backButton"></a>
+        <a id="main-menu-button-right" class="homeLink"></a>
+    </section>
+    <h2>Thank You</h2>
+    <div class="bleed">    
+    <section class="leadGenForm thankYou">      
+        <p>Thank you for signing <span class="package"></span> package with salesforce.</p>
+        <a id="GoToHome" class="button">Go to Home</a>
+    </section>
+    </div>  
+
+    <script type="text/javascript">
+        
+            function getUrlVars() {
+                var vars = {};
+                var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+                    vars[key] = value;
+                });
+                return vars;
+            }             
+
+            $(document).ready(function () {
+                
+                $("#main-menu-button-right, #GoToHome").click(function () {
+                      window.location.href = "/DemoApp/apex/apppages" + location.search;
+                  });              
+                
+                 
+                var packageId = getUrlVars()["pid"];
+                $(".package").html(packageId);
+ 
+            });
+         
+        </script>
+</div>
+</apex:page>

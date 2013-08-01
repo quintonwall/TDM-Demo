@@ -1,0 +1,317 @@
+<apex:page standardController="DemoApp__c" extensions="MobileDemoAppController" showHeader="false" sidebar="false" docType="html-5.0" standardstylesheets="false">
+	
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
+	<meta name="apple-mobile-web-app-capable" content="yes"/>
+	<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+
+	<apex:stylesheet value="{!URLFOR($Resource.resources, '/css/bootstrap.min.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.swipeView, '/swipeView/style.css')}"/>
+
+	<style>
+		.title {
+			font-size: 20px;
+			text-align: center;
+			text-shadow: 0 1px 0 #000;
+			margin-bottom: 20px;
+		}
+
+		.images {
+			margin-bottom: 10px;
+		}
+
+		.item img {
+			margin: 0 auto;
+			max-width: 290px;
+			max-height: 190px;
+		}
+
+		.item {
+			width: 300px;
+			height: 200px;
+		}
+
+		.btn {
+			margin: 0 auto;
+			display: block;
+		}
+
+		.carousel {
+			margin-bottom: 0px;
+		}
+
+		.springboards li {
+			list-style-type: none;
+			background: white;
+			border: 1px solid #ddd;
+			padding: 5px 20px;
+		}
+
+		.springboards {
+			margin: 0px;
+		}
+
+		.springboards li.disabled {
+			background: #ddd;
+		}
+
+		.springboards li.disabled a {
+			pointer-events: none;
+       		cursor: default;
+       		color: #6b849a;
+    		text-shadow: 1px 1px #ffffff;
+		}
+	</style>
+
+	<div id="wrapper"></div>
+	<ul id="nav">
+		<li id="prev" onclick="gallery.prev()">-</li>
+		<li class="selected" onclick="gallery.goToPage(0)"></li>
+	</ul>
+
+	<apex:includeScript value="{!URLFOR($Resource.resources, '/lib/jquery.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.resources, '/lib/bootstrap.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.swipeView, '/swipeView/swipeview.js')}"/>
+
+	<script type="text/javascript">
+		var	gallery, el, i, page, dots,
+			slides = [];
+
+		$(document).ready(function() {
+			document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+
+			// home page
+			slides[0] = {title: "Home Page", desc: "Home Page", type: "home"};
+
+
+			getShowcases();
+			getAppPages();
+		});
+
+		function getShowcases() {
+			Visualforce.remoting.Manager.invokeAction(
+	            '{!$RemoteAction.MobileDemoAppController.getShowcases}',
+	            'a0Ci0000001Y3qF',
+	            function(result, event){
+	                if (event.status) {
+	                	var length = result.length;
+	                	var img = [];
+	                	for (var i=0; i<length; i++) {
+	                		if (result[i].Use_Case_Description__c == null) {
+	                			result[i].Use_Case_Description__c = '';
+	                		}
+			                slides.push(
+			                	{
+									title: result[i].Customer_Name__c,
+									img: result[i].Attachments,
+									desc: result[i].Use_Case_Description__c,
+									type: 'showcase'
+								}
+			                );
+		                }
+		            }
+	            }, 
+	            {escape: true}
+	        );
+		}
+
+		function getAppPages() {
+			Visualforce.remoting.Manager.invokeAction(
+	            '{!$RemoteAction.MobileDemoAppController.getAppPages}',
+	            'a0Ci0000001Y3qF',
+	            function(result, event){
+	                if (event.status) {
+	                	var length = result.length;
+	                	var img = [];
+	                	var dot;
+	                	for (var i=0; i<length; i++) {
+			                slides.push(
+			                	{
+									title: result[i].appPage.Title__c,
+									img: result[i].appPage.Attachments,
+									sbs: result[i].springboards,
+									desc: result[i].appPage.Description__c,
+									type: 'appPage'
+								}
+			                );
+		                }
+		            }
+		            initializeSlides();
+		            setNavBar();
+	            }, 
+	            {escape: true}
+	        );
+		}
+
+        /* initialize slide values for beginning panels */
+		function initializeSlides() {
+			gallery = new SwipeView('#wrapper', { numberOfPages: slides.length });
+
+	        for (i=0; i<3; i++) {
+				page = i==0 ? slides.length-1 : i-1;
+
+				/* add title */
+				$(gallery.masterPages[i])
+					.append($("<h5></h5>")
+						.addClass("title")
+						.html(slides[page].title)
+					);
+
+				/* add image carousel */
+				$(gallery.masterPages[i])
+					.append($("<div></div>")
+						.addClass("images")
+						.append(addCarousel(i, slides[page].img))
+					);
+
+				/* add Learn More button if its a showcase */
+				if (slides[page].type == "showcase") {
+					$(gallery.masterPages[i])
+						.append($("<div></div>")
+							.addClass("learnMoreButton")
+							.append($("<button></button>")
+								.addClass("btn btn-primary")
+								.html("Learn More")
+							)
+						);
+				} else {	// just add the button holder if it isn't
+					$(gallery.masterPages[i]).append($("<div></div>").addClass("learnMoreButton"));
+				}
+
+				/* add springboard if its an appPage */
+				if (slides[page].type == "appPage") {
+					$(gallery.masterPages[i])
+						.append($("<div></div>")
+							.addClass("boards")
+							.append(addSpringboards(slides[page].sbs))
+						);
+				} else {	// just add the holder if it isn't
+					$(gallery.masterPages[i]).append($("<div></div>").addClass("boards"));
+				}
+
+				/* add description */
+				$(gallery.masterPages[i]).append($("<span></span>").html(slides[page].desc));
+			}
+
+			/* update panels on slide change */
+			gallery.onFlip(function () {
+				var el,
+					upcoming,
+					i;
+
+				for (i=0; i<3; i++) {
+					upcoming = gallery.masterPages[i].dataset.upcomingPageIndex;
+
+					if (upcoming != gallery.masterPages[i].dataset.pageIndex) {
+						// update title
+						$(gallery.masterPages[i]).children("h5").html(slides[upcoming].title);
+
+						// update images
+						$(gallery.masterPages[i]).children(".images").empty().append(addCarousel(i, slides[upcoming].img));
+
+						// add learn more button (if its a showcase)
+						$(gallery.masterPages[i]).children(".learnMoreButton").empty();
+						if (slides[upcoming].type == "showcase") {
+							$(gallery.masterPages[i]).children(".learnMoreButton")
+								.append($("<button></button>")
+									.addClass("btn btn-primary")
+									.html("Learn More")
+								);
+						}
+						
+						// update springboards (if its an apppage)
+						$(gallery.masterPages[i]).children(".boards").empty();
+						if (slides[upcoming].type == "appPage") {
+							$(gallery.masterPages[i]).children(".learnMoreButton")
+								.append(addSpringboards(slides[upcoming].sbs));
+						}
+
+						// update description
+						$(gallery.masterPages[i]).children("span").html(slides[upcoming].desc);
+					}
+				}
+
+				document.querySelector('#nav .selected').className = '';
+				dots[gallery.pageIndex+1].className = 'selected';
+			});
+		}
+
+		function addCarousel(i, images) {
+			if (images != null) {
+				var carInner = $("<div></div>").addClass("carousel-inner");
+				var elem = $("<div></div>").addClass("carousel slide").attr("id", "carousel"+i).append(carInner);
+				var carItem, imgTag;
+
+				for (var j = 0; j < images.length; j++) {
+					carItem = $("<div></div").addClass("item");
+
+					if (j == 0) {
+						carItem.addClass("active");
+					}
+
+					imgTag = $("<img></img>").attr("src", "{!$Site.Prefix}/servlet/servlet.FileDownload?file="+images[j].Id);
+					carItem.append(imgTag);
+					carInner.append(carItem);
+				}
+
+				elem.append($("<a></a>")
+					.addClass("carousel-control left")
+					.attr( { "href": "#carousel"+i, "data-slide": "prev"} )
+					.html("&lsaquo;")
+					);
+
+				elem.append($("<a></a>")
+					.addClass("carousel-control right")
+					.attr( { "href": "#carousel"+i, "data-slide": "next"} )
+					.html("&rsaquo;")
+					);
+				return elem;
+			}
+		}
+
+		function addSpringboards(boards) {
+			var ul = $("<ul></ul>").addClass("springboards");
+			var li;
+
+			for (var j = 0; j < boards.length; j++) {
+				li = $("<li></li>")
+					.append($("<a></a>")
+						.html(boards[j].Springboard__r.Action_Name__c)
+						.attr("href", '/apex/'+boards[j].Springboard__r.Visualforce_Page_Name__c)
+						);
+
+				if (boards[j].Springboard__r.Requires_Login__c) {
+					li.addClass("disabled");
+				}
+
+				ul.append(li);
+			}
+
+			return ul;
+		}
+
+		/* add dots to nav bar for each showcase */
+        function setNavBar() {
+        	var length = slides.length;
+        	var dot;
+
+        	for (var i = 1; i < length; i++) {
+				dot = $("<li></li>").attr("onclick", "gallery.goToPage("+(i)+")");
+        		$("#nav").append(dot);
+
+        		if (i == length-1) {
+	        		$("#nav")
+	        			.append($("<li></li>")
+	        				.attr({id: "next", onclick: "gallery.next()"})
+	        				.html("+")
+	        			);
+	        	}
+        	}
+        	var width = $("#nav").width();
+        	$("#nav").css("margin-left", (width/2)*-1);
+        	dots = document.querySelectorAll('#nav li');
+        }
+
+	</script>
+	
+</apex:page>

@@ -1,0 +1,49 @@
+<apex:page controller="PackagesController" standardstylesheets="false" showheader="false" sidebar="false"> 
+   
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1"/>
+   <apex:stylesheet value="{!URLFOR($Resource.TDM_Resources, 'styles/styles.css')}"/> 
+      <apex:includeScript value="{!URLFOR($Resource.TDM_Resources, 'js/jquery.js')}"/>
+     <script type="text/javascript">
+       
+    $(document).ready(function () {              
+               $("#main-menu-button-left").click(function () {
+                       window.location.href = "/DemoApp/apex/apppages?id=" + location.search;
+                  });
+                   $("#main-menu-button-right").click(function () {
+                      window.location.href = "/DemoApp/apex/apppages?id=" + location.search;
+                  });
+          });
+    </script>
+   <div class="wrapper innerPage">
+    <section class="topBar">
+        <a id="main-menu-button-left" class="backButton"></a>
+        <h1>Package</h1>
+        <a id="main-menu-button-right" class="homeLink"></a>
+    </section>
+    <h2>sign for package</h2>
+    <div class="bleed">    
+    <section class="signForPackage">
+    <apex:form > 
+        <apex:selectList value="{!selectedPackage}" multiselect="false">
+            <apex:selectOptions value="{!items}"/>
+        </apex:selectList> 
+        
+        <apex:pageBlock >
+              <apex:commandLink action="{!signWithDocuSign}" styleClass="button" value="Next"
+                   rerender="resultsPanel" status="status"/>
+        </apex:pageBlock>  
+
+        <!-- DEBUG printing
+         <apex:actionStatus id="status" startText="Calling DocuSign..."/>
+          <apex:outputPanel id="resultsPanel">
+               <apex:outputText value="{!responseStr}"/>
+          </apex:outputPanel>
+        -->  
+          
+  </apex:form> 
+  </section>
+    </div>    
+</div>
+</apex:page>
